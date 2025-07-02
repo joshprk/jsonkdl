@@ -56,7 +56,7 @@ pub fn convert_file_contents(input: &Path, output: &Path, verbose: bool) -> Resu
     fs::write(output, kdl_doc.to_string())?;
 
     if verbose {
-        println!("Converted {} -> {}", input.display(), output.display());
+        println!("converted {} -> {}", input.display(), output.display());
     }
 
     Ok(())
@@ -64,7 +64,7 @@ pub fn convert_file_contents(input: &Path, output: &Path, verbose: bool) -> Resu
 
 pub fn json_to_kdl(json: Value) -> Result<KdlDocument> {
     let array = json.as_array().ok_or_else(|| {
-        ConversionError::InvalidStructure("Document root must be a JSON array".to_string())
+        ConversionError::InvalidStructure("document root must be json array".to_string())
     })?;
 
     let mut document = KdlDocument::new();
@@ -74,6 +74,8 @@ pub fn json_to_kdl(json: Value) -> Result<KdlDocument> {
         document.nodes_mut().push(node);
     }
 
+    document.autoformat();
+
     Ok(document)
 }
 
@@ -81,14 +83,14 @@ fn json_value_to_node(value: &Value) -> Result<KdlNode> {
     let name = value
         .get("name")
         .and_then(|n| n.as_str())
-        .ok_or_else(|| ConversionError::InvalidStructure("`name` must exist and be a string".to_string()))?;
+        .ok_or_else(|| ConversionError::InvalidStructure("name must be non-empty string".to_string()))?;
 
     let mut node = KdlNode::new(name);
 
     // Handle arguments
     if let Some(arguments) = value.get("arguments") {
         let args = arguments.as_array().ok_or_else(|| {
-            ConversionError::InvalidStructure("`arguments` must be an array".to_string())
+            ConversionError::InvalidStructure("arguments must be an array".to_string())
         })?;
 
         for arg in args {
@@ -100,7 +102,7 @@ fn json_value_to_node(value: &Value) -> Result<KdlNode> {
     // Handle properties
     if let Some(properties) = value.get("properties") {
         let props = properties.as_object().ok_or_else(|| {
-            ConversionError::InvalidStructure("`properties` must be an object".to_string())
+            ConversionError::InvalidStructure("properties must be an object".to_string())
         })?;
 
         for (key, prop_value) in props {
@@ -151,7 +153,7 @@ fn json_value_to_entry(value: &Value) -> Result<KdlEntry> {
         Value::String(s) => KdlValue::String(s.clone()),
         _ => {
             return Err(ConversionError::InvalidStructure(
-                "unsupported JSON value type for KDL conversion".to_string(),
+                "unsupported json value type for kdl conversion".to_string(),
             ))
         }
     };
