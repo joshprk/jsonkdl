@@ -3,6 +3,10 @@ name = "jsonkdl"
 version = "1.0.0"
 edition = "2024"
 
+[[bin]]
+name = "jsonkdl"
+path = "src/main.rs"
+
 [dependencies]
 kdl = "6.3.4"
 serde_json = "1.0.140"
