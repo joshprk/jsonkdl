@@ -1,0 +1,64 @@
+[
+  {
+    "name": "package",
+    "properties": {
+      "name": "my-app",
+      "version": "1.0.0"
+    },
+    "children": [
+      {
+        "name": "dependencies",
+        "children": [
+          {
+            "name": "serde",
+            "arguments": [
+              "1.0"
+            ],
+            "properties": {
+              "version": "version",
+              "features": "derive"
+            }
+          },
+          {
+            "name": "tokio",
+            "arguments": [
+              "2.0"
+            ],
+            "properties": {
+              "optional": true
+            }
+          }
+        ]
+      },
+      {
+        "name": "metadata",
+        "properties": {
+          "author": "Jane Doe",
+          "license": "MIT"
+        },
+        "children": [
+          {
+            "name": "build-info",
+            "arguments": [
+              42,
+              true,
+              null,
+              {
+                "value": 3.14159,
+                "type": "pi"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "config",
+    "type": "development",
+    "properties": {
+      "debug": true,
+      "port": 8080
+    }
+  }
+]
