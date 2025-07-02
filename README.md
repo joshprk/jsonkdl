@@ -2,6 +2,8 @@
 
 Converts JSON to KDL.
 
+Do you have a use case not covered or not functional using this tool? Let me know through an issue!
+
 ## Usage
 
 ```
