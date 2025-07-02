@@ -1,0 +1,14 @@
+[
+  {
+    "name": "combo",
+    "properties": {
+      "enabled": "yes"
+    },
+    "children": [
+      {
+        "name": "sub",
+        "arguments": ["ok"]
+      }
+    ]
+  }
+]

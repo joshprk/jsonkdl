@@ -1,0 +1,17 @@
+[
+  {
+    "name": "parent",
+    "children": [
+      {
+        "name": "child",
+        "arguments": ["hi"]
+      },
+      {
+        "name": "child2",
+        "properties": {
+          "note": "second"
+        }
+      }
+    ]
+  }
+]

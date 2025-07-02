@@ -1,0 +1,14 @@
+[
+  {
+    "name": "empty-args",
+    "arguments": []
+  },
+  {
+    "name": "empty-props",
+    "properties": {}
+  },
+  {
+    "name": "empty-children",
+    "children": []
+  }
+]

@@ -1,0 +1,13 @@
+[
+  {
+    "name": "typed",
+    "arguments": [
+      {"value": 3.14, "type": "f32"},
+      {"value": "foo", "type": "str"}
+    ],
+    "properties": {
+      "important": {"value": true, "type": "bool!"}
+    }
+  }
+]
+

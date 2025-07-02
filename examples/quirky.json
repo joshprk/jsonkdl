@@ -1,0 +1,10 @@
+[
+  {
+    "name": "emoji-time",
+    "arguments": ["🦀", "💥", ":)"],
+    "properties": {
+      "mood": "🎉",
+      "quote": "i'm not like the other nodes"
+    }
+  }
+]

@@ -1,0 +1,10 @@
+[
+  {
+    "name": "mixed",
+    "arguments": [1, 2],
+    "properties": {
+      "label": "thing"
+    }
+  }
+]
+

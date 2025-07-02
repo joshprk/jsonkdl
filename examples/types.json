@@ -1,0 +1,6 @@
+[
+  {
+    "name": "types",
+    "arguments": [123, "hello", true, null, {"value": false, "type": "bool"}]
+  }
+]

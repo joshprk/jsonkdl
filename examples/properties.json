@@ -1,0 +1,9 @@
+[
+  {
+    "name": "props-only",
+    "properties": {
+      "color": "red",
+      "size": "XL"
+    }
+  }
+]
