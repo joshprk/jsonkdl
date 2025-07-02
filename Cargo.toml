@@ -1,9 +1,8 @@
 [package]
 name = "jsonkdl"
-version = "0.1.0"
+version = "1.0.0"
 edition = "2024"
 
 [dependencies]
-clap = "4.5.40"
 kdl = "6.3.4"
 serde_json = "1.0.140"

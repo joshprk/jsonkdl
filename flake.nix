@@ -35,7 +35,7 @@
         packages = {
           release = pkgs.stdenv.mkDerivation {
             name = "jsonkdl";
-            version = "0.1.0";
+            version = "1.0.0";
             src = ./.;
 
             buildInputs = with pkgs; [
