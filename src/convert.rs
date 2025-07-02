@@ -43,7 +43,6 @@ impl From<serde_json::Error> for ConversionError {
 
 pub type Result<T> = std::result::Result<T, ConversionError>;
 
-// Pure conversion function - no file I/O validation, just does the work
 pub fn convert_file_contents(input: &Path, output: &Path, verbose: bool) -> Result<()> {
     let json_content = fs::read_to_string(input)?;
     let json_value: Value = serde_json::from_str(&json_content)?;
@@ -129,35 +128,30 @@ fn json_value_to_node(value: &Value) -> Result<KdlNode> {
 }
 
 fn json_value_to_entry(value: &Value) -> Result<KdlEntry> {
-    let type_annotation = value
-        .get("type")
-        .and_then(|t| t.as_str())
-        .map(|t| t.to_string());
-
-    let actual_value = value.get("value").unwrap_or(value);
+    let (actual_value, type_annotation) = if let Some(obj) = value.as_object() {
+        let val = obj.get("value").unwrap_or(value);
+        let ty = obj.get("type").and_then(|t| t.as_str()).map(|s| s.to_string());
+        (val, ty)
+    } else {
+        (value, None)
+    };
 
     let kdl_value = match actual_value {
         Value::Null => KdlValue::Null,
         Value::Bool(b) => KdlValue::Bool(*b),
         Value::Number(n) => {
-            if let Some(f) = n.as_f64() {
-                if n.is_f64() {
-                    KdlValue::Float(f)
-                } else {
-                    KdlValue::Integer(f as i128)
-                }
-            } else if let Some(i) = n.as_i64() {
+            if let Some(i) = n.as_i64() {
                 KdlValue::Integer(i as i128)
+            } else if let Some(f) = n.as_f64() {
+                KdlValue::Float(f)
             } else {
-                return Err(ConversionError::InvalidStructure(
-                    "Invalid number value".to_string(),
-                ));
+                return Err(ConversionError::InvalidStructure("invalid number value".to_string()));
             }
         }
         Value::String(s) => KdlValue::String(s.clone()),
         _ => {
             return Err(ConversionError::InvalidStructure(
-                "Unsupported JSON value type for KDL conversion".to_string(),
+                "unsupported JSON value type for KDL conversion".to_string(),
             ))
         }
     };
