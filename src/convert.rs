@@ -43,10 +43,10 @@ impl From<serde_json::Error> for ConversionError {
 
 pub type Result<T> = std::result::Result<T, ConversionError>;
 
-pub fn convert_file_contents(input: &Path, output: &Path, verbose: bool) -> Result<()> {
+pub fn convert_file_contents(input: &Path, output: &Path, verbose: bool, kdl_version: i32) -> Result<()> {
     let json_content = fs::read_to_string(input)?;
     let json_value: Value = serde_json::from_str(&json_content)?;
-    let kdl_doc = json_to_kdl(json_value)?;
+    let kdl_doc = json_to_kdl(json_value, Some(kdl_version))?;
 
     // Create output directory if needed
     if let Some(parent) = output.parent() {
@@ -62,7 +62,7 @@ pub fn convert_file_contents(input: &Path, output: &Path, verbose: bool) -> Resu
     Ok(())
 }
 
-pub fn json_to_kdl(json: Value) -> Result<KdlDocument> {
+pub fn json_to_kdl(json: Value, kdl_version: Option<i32>) -> Result<KdlDocument> {
     let array = json.as_array().ok_or_else(|| {
         ConversionError::InvalidStructure("document root must be json array".to_string())
     })?;
@@ -72,6 +72,15 @@ pub fn json_to_kdl(json: Value) -> Result<KdlDocument> {
     for value in array {
         let node = json_value_to_node(value)?;
         document.nodes_mut().push(node);
+    }
+
+    // `kdl_version` will be provided for all root calls
+    if let Some(kdl_ver_num) = kdl_version {
+        if kdl_ver_num == 1 {
+            document.ensure_v1();
+        } else {
+            document.ensure_v2();
+        }
     }
 
     document.autoformat();
@@ -113,7 +122,7 @@ fn json_value_to_node(value: &Value) -> Result<KdlNode> {
 
     // Handle children
     if let Some(children) = value.get("children") {
-        let child_doc = json_to_kdl(children.clone())?;
+        let child_doc = json_to_kdl(children.clone(), None)?;
         node.set_children(child_doc);
     }
 
