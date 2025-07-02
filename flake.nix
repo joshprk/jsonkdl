@@ -39,7 +39,7 @@
 
             src = ./.;
 
-            cargoHash = "sha256-n1h3/yl9ixTweTah/02ZL+bdU/+j1fPCMdNstzkvIw0=";
+            cargoHash = "sha256-9dHS41ZyI9vna0w8N6/PXsmObKPHUi25JPFLsEaxG/A=";
           };
 
           default = self'.packages.release;
