@@ -5,7 +5,7 @@ use std::process::Command;
 use kdl::KdlDocument;
 
 #[test]
-fn test_examples_v1() {
+fn examples_v1() {
     let examples_dir = Path::new("examples");
     let output_dir = Path::new("target/test_outputs/v1");
 
