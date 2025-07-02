@@ -16,7 +16,7 @@
   outputs = inputs:
     inputs.flake-parts.lib.mkFlake {inherit inputs;} {
       systems = inputs.nixpkgs.lib.systems.flakeExposed;
-      perSystem = {self', pkgs, system, ...}: {
+      perSystem = {self', pkgs, lib, system, ...}: {
         _module.args.pkgs =
           import inputs.nixpkgs {
             inherit system;
@@ -33,26 +33,20 @@
         };
 
         packages = {
-          release = pkgs.stdenv.mkDerivation {
-            name = "jsonkdl";
+          release = pkgs.rustPlatform.buildRustPackage {
+            pname = "jsonkdl";
             version = "1.0.0";
+
             src = ./.;
 
-            buildInputs = with pkgs; [
-              rust-bin.stable.latest.default
-            ];
-            
-            buildPhase = ''
-              cargo build --release
-            '';
-
-            installPhase = ''
-              mkdir -p $out/bin
-              cp $src/target/release/jsonkdl $out/bin
-            '';
+            cargoHash = "sha256-n1h3/yl9ixTweTah/02ZL+bdU/+j1fPCMdNstzkvIw0=";
           };
 
           default = self'.packages.release;
+        };
+
+        devShells.default = pkgs.mkShell {
+          packages = with pkgs; [rust-bin.stable.latest.default];
         };
       };
     };
