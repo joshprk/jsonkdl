@@ -1,6 +1,8 @@
-use std::fs;
+use std::fs::{self, File};
+use std::io::Read;
 use std::path::Path;
 use std::process::Command;
+use kdl::KdlDocument;
 
 #[test]
 fn test_examples() {
@@ -28,6 +30,16 @@ fn test_examples() {
             .expect("failed to run binary");
 
         assert!(status.success(), "jsonkdl failed on input: {:?}", path);
+
+        let mut kdl_str = String::new();
+
+        File::open(&output_file)
+            .expect("failed to open output kdl")
+            .read_to_string(&mut kdl_str)
+            .expect("failed to read output kdl");
+
+        let _doc: KdlDocument = kdl_str
+            .parse()
+            .expect("output is not valid kdl");
     }
 }
-
