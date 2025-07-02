@@ -5,14 +5,18 @@ Converts JSON to KDL.
 ## Usage
 
 ```
-JSON to KDL Converter
-Usage:
-  jsonkdl <input> <output> [options]
+Usage: jsonkdl <input> <output> [options]
+Converts JSON to KDL.
+By default, KDL spec v2 is used.
+
 Arguments:
-  <input>   Input JSON file
-  <output>  Output KDL file
+  <input>          Path to input JSON file
+  <output>         Path to output KDL file
+
 Options:
-  -f, --force      Overwrite existing files
-  -v, --verbose    Verbose output
+  -1, --kdl-v1     Convert to KDL v1
+  -2, --kdl-v2     Convert to KDL v2
+  -f, --force      Overwrite output if it exists
+  -v, --verbose    Print extra information during conversion
   -h, --help       Show this help message
 ```

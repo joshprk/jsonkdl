@@ -43,10 +43,19 @@ impl From<serde_json::Error> for ConversionError {
 
 pub type Result<T> = std::result::Result<T, ConversionError>;
 
-pub fn convert_file_contents(input: &Path, output: &Path, verbose: bool) -> Result<()> {
+pub fn convert_file_contents(input: &Path, output: &Path, verbose: bool, kdl_version: i32) -> Result<()> {
     let json_content = fs::read_to_string(input)?;
     let json_value: Value = serde_json::from_str(&json_content)?;
-    let kdl_doc = json_to_kdl(json_value)?;
+    let mut kdl_doc = json_to_kdl(json_value)?;
+
+    // For some reason, you MUST autoformat before ensuring version.
+    kdl_doc.autoformat();
+
+    if kdl_version == 2 {
+        kdl_doc.ensure_v2();
+    } else {
+        kdl_doc.ensure_v1();
+    }
 
     // Create output directory if needed
     if let Some(parent) = output.parent() {
@@ -73,8 +82,6 @@ pub fn json_to_kdl(json: Value) -> Result<KdlDocument> {
         let node = json_value_to_node(value)?;
         document.nodes_mut().push(node);
     }
-
-    document.autoformat();
 
     Ok(document)
 }

@@ -5,9 +5,9 @@ use std::process::Command;
 use kdl::KdlDocument;
 
 #[test]
-fn test_examples() {
+fn test_examples_v1() {
     let examples_dir = Path::new("examples");
-    let output_dir = Path::new("target/test_outputs");
+    let output_dir = Path::new("target/test_outputs/v1");
 
     fs::create_dir_all(output_dir).expect("failed to create test output directory");
 
@@ -23,9 +23,10 @@ fn test_examples() {
         let output_file = output_dir.join(format!("{file_name}.kdl"));
 
         let status = Command::new(env!("CARGO_BIN_EXE_jsonkdl"))
+            .arg("-f")
+            .arg("-1")
             .arg(&path)
             .arg(&output_file)
-            .arg("-f")
             .status()
             .expect("failed to run binary");
 
@@ -38,8 +39,6 @@ fn test_examples() {
             .read_to_string(&mut kdl_str)
             .expect("failed to read output kdl");
 
-        let _doc: KdlDocument = kdl_str
-            .parse()
-            .expect("output is not valid kdl");
+        KdlDocument::parse_v1(&kdl_str).expect("output is not valid kdl");
     }
 }

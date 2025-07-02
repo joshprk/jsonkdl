@@ -4,15 +4,17 @@ use std::env;
 use std::path::Path;
 
 const HELP_TEXT: &str = "\
-jsonkdl - convert json to kdl
-Usage:
-  jsonkdl <input> <output> [options]
+Usage: jsonkdl <input> <output> [options]
+Converts JSON to KDL.
+By default, KDL spec v2 is used.
 
 Arguments:
-  <input>          Path to input json file
-  <output>         Path to output kdl file
+  <input>          Path to input JSON file
+  <output>         Path to output KDL file
 
-Aptions:
+Options:
+  -1, --kdl-v1     Convert to KDL v1
+  -2, --kdl-v2     Convert to KDL v2
   -f, --force      Overwrite output if it exists
   -v, --verbose    Print extra information during conversion
   -h, --help       Show this help message
@@ -23,6 +25,7 @@ pub enum CliError {
     MissingInput,
     MissingOutput,
     HelpRequested,
+    MultipleKdlVersion,
     InvalidInputPath(String),
     FileExists(String),
     InputNotFound(String),
@@ -37,6 +40,7 @@ pub struct Args {
     pub output: String,
     pub force: bool,
     pub verbose: bool,
+    pub kdl_version: i32,
 }
 
 impl std::fmt::Display for CliError {
@@ -45,6 +49,7 @@ impl std::fmt::Display for CliError {
             CliError::MissingInput => writeln!(f, "missing input path"),
             CliError::MissingOutput => writeln!(f, "missing output path"),
             CliError::HelpRequested => writeln!(f, "help requested"),
+            CliError::MultipleKdlVersion => writeln!(f, "specify only one of --kdl-v1 or --kdl-v2"),
             CliError::InvalidInputPath(path) => writeln!(f, "not a file: {}", path),
             CliError::FileExists(path) => writeln!(f, "file exists: {} (use --force to overwrite)", path),
             CliError::InputNotFound(path) => writeln!(f, "no such file: {}", path),
@@ -71,33 +76,62 @@ impl From<ConversionError> for CliError {
 impl Args {
     fn parse() -> Result<Self> {
         let args: Vec<String> = env::args().collect();
+        let mut positional: Vec<String> = vec![];
+        let mut force = false;
+        let mut verbose = false;
+        let mut kdl_version = 0;
 
-        // If no args besides the program name, show help
-        if args.len() == 1
-            || args.iter().any(|arg| arg == "--help" || arg == "-h")
-        {
+        if args.len() == 1 {
             return Err(CliError::HelpRequested);
         }
 
-        let force = args.iter().any(|arg| arg == "--force" || arg == "-f");
-        let verbose = args.iter().any(|arg| arg == "--verbose" || arg == "-v");
+        for arg in args.iter().skip(1) {
+            if !arg.starts_with('-') {
+                positional.push(arg.into());
+            } else if arg == "-f" || arg == "--force" {
+                force = true;
+            } else if arg == "-v" || arg == "--verbose" {
+                verbose = true;
+            } else if arg == "-1" || arg == "--kdl-v1" {
+                if kdl_version != 0 {
+                    return Err(CliError::MultipleKdlVersion);
+                }
 
-        let positional: Vec<String> = args
-            .iter()
-            .skip(1)
-            .filter(|arg| !arg.starts_with('-'))
-            .cloned()
-            .collect();
+                kdl_version = 1;
+            } else if arg == "-2" || arg == "--kdl-v2" {
+                if kdl_version != 0 {
+                    return Err(CliError::MultipleKdlVersion);
+                }
 
-        let input = positional.get(0).ok_or(CliError::MissingInput)?.to_string();
-        let output = positional.get(1).ok_or(CliError::MissingOutput)?.to_string();
+                kdl_version = 2;
+            } else if arg == "-h" || arg == "--help" {
+                return Err(CliError::HelpRequested);
+            }
+        }
 
-        Ok(Self {
+        if kdl_version == 0 {
+            kdl_version = 2;
+        };
+
+        let input = positional
+            .get(0)
+            .ok_or(CliError::MissingInput)?
+            .to_string();
+
+        let output = positional
+            .get(1)
+            .ok_or(CliError::MissingOutput)?
+            .to_string();
+
+        let result = Self {
             input,
             output,
             force,
             verbose,
-        })
+            kdl_version,
+        };
+
+        Ok(result)
     }
 }
 
@@ -130,6 +164,6 @@ pub fn run() -> Result<()> {
         return Err(CliError::FileExists(args.output));
     }
 
-    convert_file_contents(input_path, output_path, args.verbose)?;
+    convert_file_contents(input_path, output_path, args.verbose, args.kdl_version)?;
     Ok(())
 }
