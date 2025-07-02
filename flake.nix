@@ -1,36 +1,59 @@
 {
-  description = "A devShell example";
-
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
-    rust-overlay.url = "github:oxalica/rust-overlay";
-    flake-utils.url = "github:numtide/flake-utils";
+    nixpkgs.url = "https://channels.nixos.org/nixos-unstable/nixexprs.tar.xz";
+
+    flake-parts = {
+      url = "github:hercules-ci/flake-parts";
+      inputs.nixpkgs-lib.follows = "nixpkgs";
+    };
+
+    rust-overlay = {
+      url = "github:oxalica/rust-overlay";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
-  outputs = { self, nixpkgs, rust-overlay, flake-utils, ... }:
-    flake-utils.lib.eachDefaultSystem (system:
-      let
-        overlays = [ (import rust-overlay) ];
-        pkgs = import nixpkgs {
-          inherit system overlays;
-        };
-      in
-      with pkgs;
-      {
-        devShells.default = mkShell {
-          buildInputs = [
-            openssl
-            pkg-config
-            eza
-            fd
-            rust-bin.beta.latest.default
-          ];
+  outputs = inputs:
+    inputs.flake-parts.lib.mkFlake {inherit inputs;} {
+      systems = inputs.nixpkgs.lib.systems.flakeExposed;
+      perSystem = {self', pkgs, system, ...}: {
+        _module.args.pkgs =
+          import inputs.nixpkgs {
+            inherit system;
+            overlays = [inputs.rust-overlay.overlays.default];
+          };
 
-          shellHook = ''
-            alias ls=eza
-            alias find=fd
-          '';
+        apps = {
+          release = {
+            type = "app";
+            program = "${self'.packages.release}/bin/jsonkdl";
+          };
+
+          default = self'.apps.release;
         };
-      }
-    );
+
+        packages = {
+          release = pkgs.stdenv.mkDerivation {
+            name = "jsonkdl";
+            version = "0.1.0";
+            src = ./.;
+
+            buildInputs = with pkgs; [
+              rust-bin.stable.latest.default
+            ];
+            
+            buildPhase = ''
+              cargo build --release
+            '';
+
+            installPhase = ''
+              mkdir -p $out/bin
+              cp $src/target/release/jsonkdl $out/bin
+            '';
+          };
+
+          default = self'.packages.release;
+        };
+      };
+    };
 }
