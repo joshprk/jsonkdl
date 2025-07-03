@@ -1,6 +1,8 @@
 [package]
 name = "jsonkdl"
 version = "1.0.0"
+description = "JSON to KDL converter"
+license = "MIT"
 edition = "2024"
 
 [[bin]]
