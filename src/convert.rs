@@ -43,7 +43,7 @@ impl From<serde_json::Error> for ConversionError {
 
 pub type Result<T> = std::result::Result<T, ConversionError>;
 
-pub fn convert_file_contents(input: &Path, output: &Path, verbose: bool, kdl_version: i32) -> Result<()> {
+pub fn convert_file_content(input: &Path, kdl_version: i32) -> Result<String> {
     let json_content = fs::read_to_string(input)?;
     let json_value: Value = serde_json::from_str(&json_content)?;
     let mut kdl_doc = json_to_kdl(json_value)?;
@@ -57,12 +57,18 @@ pub fn convert_file_contents(input: &Path, output: &Path, verbose: bool, kdl_ver
         kdl_doc.ensure_v1();
     }
 
-    // Create output directory if needed
-    if let Some(parent) = output.parent() {
-        fs::create_dir_all(parent)?;
-    }
+    Ok(kdl_doc.to_string())
+}
 
-    fs::write(output, kdl_doc.to_string())?;
+pub fn convert_and_write_file_content(
+    input: &Path,
+    output: &Path,
+    verbose: bool,
+    kdl_version: i32,
+) -> Result<()> {
+    let kdl_doc_content = convert_file_content(input, kdl_version)?;
+
+    fs::write(output, kdl_doc_content)?;
 
     if verbose {
         println!("converted {} -> {}", input.display(), output.display());
@@ -87,10 +93,9 @@ pub fn json_to_kdl(json: Value) -> Result<KdlDocument> {
 }
 
 fn json_value_to_node(value: &Value) -> Result<KdlNode> {
-    let name = value
-        .get("name")
-        .and_then(|n| n.as_str())
-        .ok_or_else(|| ConversionError::InvalidStructure("name must be non-empty string".to_string()))?;
+    let name = value.get("name").and_then(|n| n.as_str()).ok_or_else(|| {
+        ConversionError::InvalidStructure("name must be non-empty string".to_string())
+    })?;
 
     let mut node = KdlNode::new(name);
 
@@ -139,7 +144,10 @@ fn json_value_to_node(value: &Value) -> Result<KdlNode> {
 fn json_value_to_entry(value: &Value) -> Result<KdlEntry> {
     let (actual_value, type_annotation) = if let Some(obj) = value.as_object() {
         let val = obj.get("value").unwrap_or(value);
-        let ty = obj.get("type").and_then(|t| t.as_str()).map(|s| s.to_string());
+        let ty = obj
+            .get("type")
+            .and_then(|t| t.as_str())
+            .map(|s| s.to_string());
         (val, ty)
     } else {
         (value, None)
@@ -154,14 +162,16 @@ fn json_value_to_entry(value: &Value) -> Result<KdlEntry> {
             } else if let Some(f) = n.as_f64() {
                 KdlValue::Float(f)
             } else {
-                return Err(ConversionError::InvalidStructure("invalid number value".to_string()));
+                return Err(ConversionError::InvalidStructure(
+                    "invalid number value".to_string(),
+                ));
             }
         }
         Value::String(s) => KdlValue::String(s.clone()),
         _ => {
             return Err(ConversionError::InvalidStructure(
                 "unsupported json value type for kdl conversion".to_string(),
-            ))
+            ));
         }
     };
 

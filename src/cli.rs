@@ -1,5 +1,5 @@
-use crate::convert::convert_file_contents;
 use crate::convert::ConversionError;
+use crate::convert::{convert_and_write_file_content, convert_file_content};
 use std::env;
 use std::path::Path;
 
@@ -23,7 +23,6 @@ Options:
 #[derive(Debug)]
 pub enum CliError {
     MissingInput,
-    MissingOutput,
     HelpRequested,
     MultipleKdlVersion,
     InvalidInputPath(String),
@@ -37,7 +36,7 @@ pub type Result<T> = std::result::Result<T, CliError>;
 #[derive(Debug)]
 pub struct Args {
     pub input: String,
-    pub output: String,
+    pub output: Option<String>,
     pub force: bool,
     pub verbose: bool,
     pub kdl_version: i32,
@@ -47,11 +46,12 @@ impl std::fmt::Display for CliError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             CliError::MissingInput => writeln!(f, "missing input path"),
-            CliError::MissingOutput => writeln!(f, "missing output path"),
             CliError::HelpRequested => writeln!(f, "help requested"),
             CliError::MultipleKdlVersion => writeln!(f, "specify only one of --kdl-v1 or --kdl-v2"),
             CliError::InvalidInputPath(path) => writeln!(f, "not a file: {}", path),
-            CliError::FileExists(path) => writeln!(f, "file exists: {} (use --force to overwrite)", path),
+            CliError::FileExists(path) => {
+                writeln!(f, "file exists: {} (use --force to overwrite)", path)
+            }
             CliError::InputNotFound(path) => writeln!(f, "no such file: {}", path),
             CliError::Conversion(e) => writeln!(f, "conversion error: {}", e),
         }
@@ -113,15 +113,9 @@ impl Args {
             kdl_version = 2;
         };
 
-        let input = positional
-            .get(0)
-            .ok_or(CliError::MissingInput)?
-            .to_string();
+        let input = positional.get(0).ok_or(CliError::MissingInput)?.to_string();
 
-        let output = positional
-            .get(1)
-            .ok_or(CliError::MissingOutput)?
-            .to_string();
+        let output = positional.get(1).map(|s| s.to_string());
 
         let result = Self {
             input,
@@ -150,7 +144,6 @@ pub fn run() -> Result<()> {
     };
 
     let input_path = Path::new(&args.input);
-    let output_path = Path::new(&args.output);
 
     if !input_path.exists() {
         return Err(CliError::InputNotFound(args.input));
@@ -160,10 +153,19 @@ pub fn run() -> Result<()> {
         return Err(CliError::InvalidInputPath(args.input));
     }
 
-    if output_path.exists() && !args.force {
-        return Err(CliError::FileExists(args.output));
+    if let Some(output) = args.output {
+        let output_path = Path::new(&output);
+
+        if output_path.exists() && !args.force {
+            return Err(CliError::FileExists(output));
+        }
+
+        convert_and_write_file_content(input_path, output_path, args.verbose, args.kdl_version)?;
+    } else {
+        let kdl_content = convert_file_content(input_path, args.kdl_version)?;
+
+        println!("{}", kdl_content);
     }
 
-    convert_file_contents(input_path, output_path, args.verbose, args.kdl_version)?;
     Ok(())
 }
