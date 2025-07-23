@@ -86,7 +86,7 @@ pub fn convert_and_write_file_content(
 
 pub fn convert_document(json: &JsonValue) -> Result<KdlDocument> {
     let json = json.as_array().ok_or_else(|| {
-        ConversionError::InvalidStructure("document root must be json array".to_string())
+        ConversionError::InvalidStructure("document root must be an array".to_string())
     })?;
 
     let mut document = KdlDocument::new();
@@ -103,7 +103,7 @@ fn convert_node(json: &JsonValue) -> Result<KdlNode> {
     let name = json
         .get("name")
         .and_then(|n| n.as_str())
-        .ok_or_else(|| ConversionError::InvalidStructure("name must be string".to_string()))?;
+        .ok_or_else(|| ConversionError::InvalidStructure("name must be a string".to_string()))?;
 
     let mut node = KdlNode::new(name);
 
