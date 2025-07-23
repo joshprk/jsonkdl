@@ -53,17 +53,18 @@ pub enum KdlVersion {
 pub fn convert_file_content(input: &Path, version: KdlVersion) -> Result<String> {
     let json_content = fs::read_to_string(input)?;
     let json_value: JsonValue = serde_json::from_str(&json_content)?;
-    let mut kdl_doc = convert_document(&json_value)?;
+
+    let mut document = convert_document(&json_value)?;
 
     // For some reason, you MUST autoformat before ensuring version.
-    kdl_doc.autoformat();
+    document.autoformat();
 
     match version {
-        KdlVersion::V1 => kdl_doc.ensure_v1(),
-        KdlVersion::V2 => kdl_doc.ensure_v2(),
+        KdlVersion::V1 => document.ensure_v1(),
+        KdlVersion::V2 => document.ensure_v2(),
     }
 
-    Ok(kdl_doc.to_string())
+    Ok(document.to_string())
 }
 
 pub fn convert_and_write_file_content(
