@@ -5,7 +5,7 @@ use std::ffi::OsString;
 use std::path::{Path, PathBuf};
 
 const HELP_TEXT: &str = "\
-Usage: jsonkdl [options] [--] <input> <output>
+Usage: jsonkdl [options] [--] <input> [<output>]
 Converts JSON to KDL.
 By default, KDL spec v2 is used.
 
@@ -18,7 +18,9 @@ Options:
 
 Arguments:
   <input>          Path to input JSON file
-  <output>         Path to output KDL file
+  <output>         Path to output KDL file (optional)
+
+If no output file is provided, the resulting KDL document is printed to standard output.
 ";
 
 #[derive(Debug)]
