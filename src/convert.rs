@@ -1,4 +1,4 @@
-use kdl::{KdlDocument, KdlEntry, KdlNode, KdlValue, NodeKey};
+use kdl::{KdlDocument, KdlEntry, KdlIdentifier, KdlNode, KdlValue, NodeKey};
 use serde_json::Value as JsonValue;
 use std::{fmt, fs, path::Path};
 
@@ -137,11 +137,9 @@ fn convert_node(json: &JsonValue) -> Result<KdlNode> {
     }
 
     // Handle type annotation
-    if let Some(type_value) = json.get("type") {
-        if !type_value.is_null() {
-            if let Some(type_str) = type_value.as_str() {
-                node.set_ty(type_str);
-            }
+    if let Some(ty) = json.get("type") {
+        if let Some(ty) = convert_type(ty)? {
+            node.set_ty(ty);
         }
     }
 
@@ -153,11 +151,9 @@ fn convert_entry(json: &JsonValue) -> Result<KdlEntry> {
 
     let mut entry = KdlEntry::new(value);
 
-    if let Some(type_value) = json.get("type") {
-        if !type_value.is_null() {
-            if let Some(type_str) = type_value.as_str() {
-                entry.set_ty(type_str);
-            }
+    if let Some(ty) = json.get("type") {
+        if let Some(ty) = convert_type(ty)? {
+            entry.set_ty(ty);
         }
     }
 
@@ -184,4 +180,13 @@ fn convert_value(json: &JsonValue) -> Result<KdlValue> {
             "unsupported json value type for kdl conversion".to_string(),
         )),
     }
+}
+
+fn convert_type(json: &JsonValue) -> Result<Option<KdlIdentifier>> {
+    if !json.is_null() {
+        if let Some(type_str) = json.as_str() {
+            return Ok(Some(KdlIdentifier::from(type_str)));
+        }
+    }
+    Ok(None)
 }
