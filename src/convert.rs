@@ -43,7 +43,14 @@ impl From<serde_json::Error> for ConversionError {
 
 pub type Result<T> = std::result::Result<T, ConversionError>;
 
-pub fn convert_file_content(input: &Path, kdl_version: i32) -> Result<String> {
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Default)]
+pub enum KdlVersion {
+    V1,
+    #[default]
+    V2,
+}
+
+pub fn convert_file_content(input: &Path, version: KdlVersion) -> Result<String> {
     let json_content = fs::read_to_string(input)?;
     let json_value: Value = serde_json::from_str(&json_content)?;
     let mut kdl_doc = json_to_kdl(json_value)?;
@@ -51,10 +58,9 @@ pub fn convert_file_content(input: &Path, kdl_version: i32) -> Result<String> {
     // For some reason, you MUST autoformat before ensuring version.
     kdl_doc.autoformat();
 
-    if kdl_version == 2 {
-        kdl_doc.ensure_v2();
-    } else {
-        kdl_doc.ensure_v1();
+    match version {
+        KdlVersion::V1 => kdl_doc.ensure_v1(),
+        KdlVersion::V2 => kdl_doc.ensure_v2(),
     }
 
     Ok(kdl_doc.to_string())
@@ -64,9 +70,9 @@ pub fn convert_and_write_file_content(
     input: &Path,
     output: &Path,
     verbose: bool,
-    kdl_version: i32,
+    version: KdlVersion,
 ) -> Result<()> {
-    let kdl_doc_content = convert_file_content(input, kdl_version)?;
+    let kdl_doc_content = convert_file_content(input, version)?;
 
     fs::write(output, kdl_doc_content)?;
 

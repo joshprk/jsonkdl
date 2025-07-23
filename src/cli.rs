@@ -1,4 +1,4 @@
-use crate::convert::ConversionError;
+use crate::convert::{ConversionError, KdlVersion};
 use crate::convert::{convert_and_write_file_content, convert_file_content};
 use std::env;
 use std::path::Path;
@@ -39,7 +39,7 @@ pub struct Args {
     pub output: Option<String>,
     pub force: bool,
     pub verbose: bool,
-    pub kdl_version: i32,
+    pub kdl_version: KdlVersion,
 }
 
 impl std::fmt::Display for CliError {
@@ -79,7 +79,7 @@ impl Args {
         let mut positional: Vec<String> = vec![];
         let mut force = false;
         let mut verbose = false;
-        let mut kdl_version = 0;
+        let mut kdl_version = None;
 
         if args.len() == 1 {
             return Err(CliError::HelpRequested);
@@ -93,25 +93,19 @@ impl Args {
             } else if arg == "-v" || arg == "--verbose" {
                 verbose = true;
             } else if arg == "-1" || arg == "--kdl-v1" {
-                if kdl_version != 0 {
+                if kdl_version.replace(KdlVersion::V1).is_some() {
                     return Err(CliError::MultipleKdlVersion);
                 }
-
-                kdl_version = 1;
             } else if arg == "-2" || arg == "--kdl-v2" {
-                if kdl_version != 0 {
+                if kdl_version.replace(KdlVersion::V2).is_some() {
                     return Err(CliError::MultipleKdlVersion);
                 }
-
-                kdl_version = 2;
             } else if arg == "-h" || arg == "--help" {
                 return Err(CliError::HelpRequested);
             }
         }
 
-        if kdl_version == 0 {
-            kdl_version = 2;
-        };
+        let kdl_version = kdl_version.unwrap_or_default();
 
         let input = positional.get(0).ok_or(CliError::MissingInput)?.to_string();
 
