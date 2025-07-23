@@ -53,7 +53,7 @@ pub enum KdlVersion {
 pub fn convert_file_content(input: &Path, version: KdlVersion) -> Result<String> {
     let json_content = fs::read_to_string(input)?;
     let json_value: JsonValue = serde_json::from_str(&json_content)?;
-    let mut kdl_doc = json_to_kdl(json_value)?;
+    let mut kdl_doc = convert_document(json_value)?;
 
     // For some reason, you MUST autoformat before ensuring version.
     kdl_doc.autoformat();
@@ -83,7 +83,7 @@ pub fn convert_and_write_file_content(
     Ok(())
 }
 
-pub fn json_to_kdl(json: JsonValue) -> Result<KdlDocument> {
+pub fn convert_document(json: JsonValue) -> Result<KdlDocument> {
     let array = json.as_array().ok_or_else(|| {
         ConversionError::InvalidStructure("document root must be json array".to_string())
     })?;
@@ -91,14 +91,14 @@ pub fn json_to_kdl(json: JsonValue) -> Result<KdlDocument> {
     let mut document = KdlDocument::new();
 
     for value in array {
-        let node = json_value_to_node(value)?;
+        let node = convert_node(value)?;
         document.nodes_mut().push(node);
     }
 
     Ok(document)
 }
 
-fn json_value_to_node(json: &JsonValue) -> Result<KdlNode> {
+fn convert_node(json: &JsonValue) -> Result<KdlNode> {
     let name = json.get("name").and_then(|n| n.as_str()).ok_or_else(|| {
         ConversionError::InvalidStructure("name must be non-empty string".to_string())
     })?;
@@ -112,7 +112,7 @@ fn json_value_to_node(json: &JsonValue) -> Result<KdlNode> {
         })?;
 
         for arg in args {
-            let entry = json_value_to_entry(arg)?;
+            let entry = convert_entry(arg)?;
             node.push(entry);
         }
     }
@@ -124,14 +124,14 @@ fn json_value_to_node(json: &JsonValue) -> Result<KdlNode> {
         })?;
 
         for (key, prop_value) in props {
-            let entry = json_value_to_entry(prop_value)?;
+            let entry = convert_entry(prop_value)?;
             node.insert(NodeKey::from(key.clone()), entry);
         }
     }
 
     // Handle children
     if let Some(children) = json.get("children") {
-        let child_doc = json_to_kdl(children.clone())?;
+        let child_doc = convert_document(children.clone())?;
         node.set_children(child_doc);
     }
 
@@ -147,7 +147,7 @@ fn json_value_to_node(json: &JsonValue) -> Result<KdlNode> {
     Ok(node)
 }
 
-fn json_value_to_entry(json: &JsonValue) -> Result<KdlEntry> {
+fn convert_entry(json: &JsonValue) -> Result<KdlEntry> {
     let (actual_value, type_annotation) = if let Some(obj) = json.as_object() {
         let val = obj.get("value").unwrap_or(json);
         let ty = obj
