@@ -149,22 +149,16 @@ fn convert_node(json: &JsonValue) -> Result<KdlNode> {
 }
 
 fn convert_entry(json: &JsonValue) -> Result<KdlEntry> {
-    let (actual_value, type_annotation) = if let Some(obj) = json.as_object() {
-        let val = obj.get("value").unwrap_or(json);
-        let ty = obj
-            .get("type")
-            .and_then(|t| t.as_str())
-            .map(|s| s.to_string());
-        (val, ty)
-    } else {
-        (json, None)
-    };
+    let value = convert_value(json.get("value").unwrap_or(json))?;
 
-    let kdl_value = convert_value(actual_value)?;
+    let mut entry = KdlEntry::new(value);
 
-    let mut entry = KdlEntry::new(kdl_value);
-    if let Some(ty) = type_annotation {
-        entry.set_ty(ty);
+    if let Some(type_value) = json.get("type") {
+        if !type_value.is_null() {
+            if let Some(type_str) = type_value.as_str() {
+                entry.set_ty(type_str);
+            }
+        }
     }
 
     Ok(entry)
