@@ -7,11 +7,10 @@ use std::path::{Path, PathBuf};
 const HELP_TEXT: &str = "\
 Usage: jsonkdl [options] [--] <input> [<output>]
 Converts JSON to KDL.
-By default, KDL spec v2 is used.
 
 Options:
   -1, --kdl-v1     Convert to KDL v1
-  -2, --kdl-v2     Convert to KDL v2
+  -2, --kdl-v2     Convert to KDL v2 (default)
   -f, --force      Overwrite output if it exists
   -v, --verbose    Print extra information during conversion
   -h, --help       Show this help message
