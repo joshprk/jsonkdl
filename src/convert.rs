@@ -53,7 +53,7 @@ pub enum KdlVersion {
 pub fn convert_file_content(input: &Path, version: KdlVersion) -> Result<String> {
     let json_content = fs::read_to_string(input)?;
     let json_value: JsonValue = serde_json::from_str(&json_content)?;
-    let mut kdl_doc = convert_document(json_value)?;
+    let mut kdl_doc = convert_document(&json_value)?;
 
     // For some reason, you MUST autoformat before ensuring version.
     kdl_doc.autoformat();
@@ -83,7 +83,7 @@ pub fn convert_and_write_file_content(
     Ok(())
 }
 
-pub fn convert_document(json: JsonValue) -> Result<KdlDocument> {
+pub fn convert_document(json: &JsonValue) -> Result<KdlDocument> {
     let array = json.as_array().ok_or_else(|| {
         ConversionError::InvalidStructure("document root must be json array".to_string())
     })?;
@@ -131,7 +131,7 @@ fn convert_node(json: &JsonValue) -> Result<KdlNode> {
 
     // Handle children
     if let Some(children) = json.get("children") {
-        let child_doc = convert_document(children.clone())?;
+        let child_doc = convert_document(children)?;
         node.set_children(child_doc);
     }
 
