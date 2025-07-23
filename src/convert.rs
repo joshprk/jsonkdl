@@ -171,25 +171,23 @@ fn convert_entry(json: &JsonValue) -> Result<KdlEntry> {
 }
 
 fn convert_value(json: &JsonValue) -> Result<KdlValue> {
-    Ok(match json {
-        JsonValue::Null => KdlValue::Null,
-        JsonValue::Bool(b) => KdlValue::Bool(*b),
+    match json {
+        JsonValue::Null => Ok(KdlValue::Null),
+        JsonValue::Bool(b) => Ok(KdlValue::Bool(*b)),
         JsonValue::Number(n) => {
             if let Some(i) = n.as_i64() {
-                KdlValue::Integer(i as i128)
+                Ok(KdlValue::Integer(i as i128))
             } else if let Some(f) = n.as_f64() {
-                KdlValue::Float(f)
+                Ok(KdlValue::Float(f))
             } else {
-                return Err(ConversionError::InvalidStructure(
+                Err(ConversionError::InvalidStructure(
                     "invalid number value".to_string(),
-                ));
+                ))
             }
         }
-        JsonValue::String(s) => KdlValue::String(s.clone()),
-        _ => {
-            return Err(ConversionError::InvalidStructure(
-                "unsupported json value type for kdl conversion".to_string(),
-            ));
-        }
-    })
+        JsonValue::String(s) => Ok(KdlValue::String(s.clone())),
+        _ => Err(ConversionError::InvalidStructure(
+            "unsupported json value type for kdl conversion".to_string(),
+        )),
+    }
 }
