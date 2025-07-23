@@ -85,13 +85,13 @@ pub fn convert_and_write_file_content(
 }
 
 pub fn convert_document(json: &JsonValue) -> Result<KdlDocument> {
-    let array = json.as_array().ok_or_else(|| {
+    let json = json.as_array().ok_or_else(|| {
         ConversionError::InvalidStructure("document root must be json array".to_string())
     })?;
 
     let mut document = KdlDocument::new();
 
-    for value in array {
+    for value in json {
         let node = convert_node(value)?;
         document.nodes_mut().push(node);
     }
@@ -108,11 +108,11 @@ fn convert_node(json: &JsonValue) -> Result<KdlNode> {
 
     // Handle arguments
     if let Some(arguments) = json.get("arguments") {
-        let args = arguments.as_array().ok_or_else(|| {
+        let arguments = arguments.as_array().ok_or_else(|| {
             ConversionError::InvalidStructure("arguments must be an array".to_string())
         })?;
 
-        for arg in args {
+        for arg in arguments {
             let entry = convert_entry(arg)?;
             node.push(entry);
         }
@@ -120,11 +120,11 @@ fn convert_node(json: &JsonValue) -> Result<KdlNode> {
 
     // Handle properties
     if let Some(properties) = json.get("properties") {
-        let props = properties.as_object().ok_or_else(|| {
+        let properties = properties.as_object().ok_or_else(|| {
             ConversionError::InvalidStructure("properties must be an object".to_string())
         })?;
 
-        for (key, prop_value) in props {
+        for (key, prop_value) in properties {
             let entry = convert_entry(prop_value)?;
             node.insert(NodeKey::from(key.clone()), entry);
         }
@@ -132,8 +132,8 @@ fn convert_node(json: &JsonValue) -> Result<KdlNode> {
 
     // Handle children
     if let Some(children) = json.get("children") {
-        let child_doc = convert_document(children)?;
-        node.set_children(child_doc);
+        let children = convert_document(children)?;
+        node.set_children(children);
     }
 
     // Handle type annotation
