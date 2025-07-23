@@ -104,10 +104,15 @@ fn convert_node(json: &JsonValue) -> Result<KdlNode> {
         .as_object()
         .ok_or_else(|| ConversionError::InvalidStructure("node must be an object".to_string()))?;
 
-    let name = json
-        .get("name")
-        .and_then(|n| n.as_str())
-        .ok_or_else(|| ConversionError::InvalidStructure("name must be a string".to_string()))?;
+    let name = match json.get("name") {
+        Some(JsonValue::String(name)) => Ok(name.as_str()),
+        Some(_) => Err(ConversionError::InvalidStructure(
+            "name must be a string".to_string(),
+        )),
+        None => Err(ConversionError::InvalidStructure(
+            "node must have a name".to_string(),
+        )),
+    }?;
 
     let mut node = KdlNode::new(name);
 
