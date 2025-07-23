@@ -25,6 +25,7 @@ pub enum CliError {
     MissingInput,
     HelpRequested,
     MultipleKdlVersion,
+    UnknownOption(String),
     InvalidInputPath(String),
     FileExists(String),
     InputNotFound(String),
@@ -48,6 +49,7 @@ impl std::fmt::Display for CliError {
             CliError::MissingInput => writeln!(f, "missing input path"),
             CliError::HelpRequested => writeln!(f, "help requested"),
             CliError::MultipleKdlVersion => writeln!(f, "specify only one of --kdl-v1 or --kdl-v2"),
+            CliError::UnknownOption(opt) => writeln!(f, "unknown command-line option {opt}"),
             CliError::InvalidInputPath(path) => writeln!(f, "not a file: {}", path),
             CliError::FileExists(path) => {
                 writeln!(f, "file exists: {} (use --force to overwrite)", path)
@@ -102,6 +104,8 @@ impl Args {
                 }
             } else if arg == "-h" || arg == "--help" {
                 return Err(CliError::HelpRequested);
+            } else {
+                return Err(CliError::UnknownOption(arg.into()));
             }
         }
 
