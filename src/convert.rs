@@ -100,6 +100,10 @@ pub fn convert_document(json: &JsonValue) -> Result<KdlDocument> {
 }
 
 fn convert_node(json: &JsonValue) -> Result<KdlNode> {
+    let json = json
+        .as_object()
+        .ok_or_else(|| ConversionError::InvalidStructure("node must be an object".to_string()))?;
+
     let name = json
         .get("name")
         .and_then(|n| n.as_str())
