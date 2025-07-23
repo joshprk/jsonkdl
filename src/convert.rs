@@ -1,5 +1,5 @@
 use kdl::{KdlDocument, KdlEntry, KdlNode, KdlValue, NodeKey};
-use serde_json::Value;
+use serde_json::Value as JsonValue;
 use std::{fmt, fs, path::Path};
 
 #[derive(Debug)]
@@ -52,7 +52,7 @@ pub enum KdlVersion {
 
 pub fn convert_file_content(input: &Path, version: KdlVersion) -> Result<String> {
     let json_content = fs::read_to_string(input)?;
-    let json_value: Value = serde_json::from_str(&json_content)?;
+    let json_value: JsonValue = serde_json::from_str(&json_content)?;
     let mut kdl_doc = json_to_kdl(json_value)?;
 
     // For some reason, you MUST autoformat before ensuring version.
@@ -83,7 +83,7 @@ pub fn convert_and_write_file_content(
     Ok(())
 }
 
-pub fn json_to_kdl(json: Value) -> Result<KdlDocument> {
+pub fn json_to_kdl(json: JsonValue) -> Result<KdlDocument> {
     let array = json.as_array().ok_or_else(|| {
         ConversionError::InvalidStructure("document root must be json array".to_string())
     })?;
@@ -98,15 +98,15 @@ pub fn json_to_kdl(json: Value) -> Result<KdlDocument> {
     Ok(document)
 }
 
-fn json_value_to_node(value: &Value) -> Result<KdlNode> {
-    let name = value.get("name").and_then(|n| n.as_str()).ok_or_else(|| {
+fn json_value_to_node(json: &JsonValue) -> Result<KdlNode> {
+    let name = json.get("name").and_then(|n| n.as_str()).ok_or_else(|| {
         ConversionError::InvalidStructure("name must be non-empty string".to_string())
     })?;
 
     let mut node = KdlNode::new(name);
 
     // Handle arguments
-    if let Some(arguments) = value.get("arguments") {
+    if let Some(arguments) = json.get("arguments") {
         let args = arguments.as_array().ok_or_else(|| {
             ConversionError::InvalidStructure("arguments must be an array".to_string())
         })?;
@@ -118,7 +118,7 @@ fn json_value_to_node(value: &Value) -> Result<KdlNode> {
     }
 
     // Handle properties
-    if let Some(properties) = value.get("properties") {
+    if let Some(properties) = json.get("properties") {
         let props = properties.as_object().ok_or_else(|| {
             ConversionError::InvalidStructure("properties must be an object".to_string())
         })?;
@@ -130,13 +130,13 @@ fn json_value_to_node(value: &Value) -> Result<KdlNode> {
     }
 
     // Handle children
-    if let Some(children) = value.get("children") {
+    if let Some(children) = json.get("children") {
         let child_doc = json_to_kdl(children.clone())?;
         node.set_children(child_doc);
     }
 
     // Handle type annotation
-    if let Some(type_value) = value.get("type") {
+    if let Some(type_value) = json.get("type") {
         if !type_value.is_null() {
             if let Some(type_str) = type_value.as_str() {
                 node.set_ty(type_str);
@@ -147,22 +147,22 @@ fn json_value_to_node(value: &Value) -> Result<KdlNode> {
     Ok(node)
 }
 
-fn json_value_to_entry(value: &Value) -> Result<KdlEntry> {
-    let (actual_value, type_annotation) = if let Some(obj) = value.as_object() {
-        let val = obj.get("value").unwrap_or(value);
+fn json_value_to_entry(json: &JsonValue) -> Result<KdlEntry> {
+    let (actual_value, type_annotation) = if let Some(obj) = json.as_object() {
+        let val = obj.get("value").unwrap_or(json);
         let ty = obj
             .get("type")
             .and_then(|t| t.as_str())
             .map(|s| s.to_string());
         (val, ty)
     } else {
-        (value, None)
+        (json, None)
     };
 
     let kdl_value = match actual_value {
-        Value::Null => KdlValue::Null,
-        Value::Bool(b) => KdlValue::Bool(*b),
-        Value::Number(n) => {
+        JsonValue::Null => KdlValue::Null,
+        JsonValue::Bool(b) => KdlValue::Bool(*b),
+        JsonValue::Number(n) => {
             if let Some(i) = n.as_i64() {
                 KdlValue::Integer(i as i128)
             } else if let Some(f) = n.as_f64() {
@@ -173,7 +173,7 @@ fn json_value_to_entry(value: &Value) -> Result<KdlEntry> {
                 ));
             }
         }
-        Value::String(s) => KdlValue::String(s.clone()),
+        JsonValue::String(s) => KdlValue::String(s.clone()),
         _ => {
             return Err(ConversionError::InvalidStructure(
                 "unsupported json value type for kdl conversion".to_string(),
