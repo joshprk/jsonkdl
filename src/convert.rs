@@ -160,7 +160,18 @@ fn convert_entry(json: &JsonValue) -> Result<KdlEntry> {
         (json, None)
     };
 
-    let kdl_value = match actual_value {
+    let kdl_value = convert_value(actual_value)?;
+
+    let mut entry = KdlEntry::new(kdl_value);
+    if let Some(ty) = type_annotation {
+        entry.set_ty(ty);
+    }
+
+    Ok(entry)
+}
+
+fn convert_value(json: &JsonValue) -> Result<KdlValue> {
+    Ok(match json {
         JsonValue::Null => KdlValue::Null,
         JsonValue::Bool(b) => KdlValue::Bool(*b),
         JsonValue::Number(n) => {
@@ -180,12 +191,5 @@ fn convert_entry(json: &JsonValue) -> Result<KdlEntry> {
                 "unsupported json value type for kdl conversion".to_string(),
             ));
         }
-    };
-
-    let mut entry = KdlEntry::new(kdl_value);
-    if let Some(ty) = type_annotation {
-        entry.set_ty(ty);
-    }
-
-    Ok(entry)
+    })
 }
