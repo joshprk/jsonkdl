@@ -184,10 +184,11 @@ fn convert_value(json: &JsonValue) -> Result<KdlValue> {
 }
 
 fn convert_type(json: &JsonValue) -> Result<Option<KdlIdentifier>> {
-    if !json.is_null() {
-        if let Some(type_str) = json.as_str() {
-            return Ok(Some(KdlIdentifier::from(type_str)));
-        }
+    match json {
+        JsonValue::String(ty) => Ok(Some(KdlIdentifier::from(ty.as_str()))),
+        JsonValue::Null => Ok(None),
+        _ => Err(ConversionError::InvalidStructure(
+            "type must be a string or null".to_string(),
+        )),
     }
-    Ok(None)
 }
