@@ -1,4 +1,4 @@
-use kdl::{KdlDocument, KdlEntry, KdlIdentifier, KdlNode, KdlValue, NodeKey};
+use kdl::{KdlDocument, KdlEntry, KdlIdentifier, KdlNode, KdlValue};
 use serde_json::Value as JsonValue;
 use std::{fmt, fs, path::Path};
 
@@ -125,8 +125,9 @@ fn convert_node(json: &JsonValue) -> Result<KdlNode> {
         })?;
 
         for (key, prop_value) in properties {
-            let entry = convert_entry(prop_value)?;
-            node.insert(NodeKey::from(key.clone()), entry);
+            let mut entry = convert_entry(prop_value)?;
+            entry.set_name(Some(key.as_str()));
+            node.push(entry);
         }
     }
 
