@@ -100,9 +100,10 @@ pub fn convert_document(json: &JsonValue) -> Result<KdlDocument> {
 }
 
 fn convert_node(json: &JsonValue) -> Result<KdlNode> {
-    let name = json.get("name").and_then(|n| n.as_str()).ok_or_else(|| {
-        ConversionError::InvalidStructure("name must be non-empty string".to_string())
-    })?;
+    let name = json
+        .get("name")
+        .and_then(|n| n.as_str())
+        .ok_or_else(|| ConversionError::InvalidStructure("name must be string".to_string()))?;
 
     let mut node = KdlNode::new(name);
 
