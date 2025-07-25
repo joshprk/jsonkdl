@@ -8,10 +8,10 @@ use miette::Context;
 
 #[test]
 fn examples_v2() -> miette::Result<()> {
-    let examples_dir = Path::new("examples");
-    let output_dir = Path::new("target/test_outputs/v2");
+    let examples_dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("examples");
+    let output_dir = Path::new(env!("CARGO_TARGET_TMPDIR")).join("v2");
 
-    fs::create_dir_all(output_dir).expect("failed to create test output directory");
+    fs::create_dir_all(&output_dir).expect("failed to create test output directory");
 
     for entry in fs::read_dir(examples_dir).expect("failed to read examples directory") {
         let entry = entry.expect("failed to read entry");
