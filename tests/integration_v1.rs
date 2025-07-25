@@ -1,10 +1,11 @@
 use std::fs::{self, File};
 use std::io::Read;
 use std::path::Path;
-use std::process::Command;
 
 use kdl::KdlDocument;
 use miette::Context;
+
+mod common;
 
 #[test]
 fn examples_v1() -> miette::Result<()> {
@@ -24,15 +25,7 @@ fn examples_v1() -> miette::Result<()> {
         let file_name = path.file_stem().unwrap().to_str().unwrap();
         let output_file = output_dir.join(format!("{file_name}.kdl"));
 
-        let status = Command::new(env!("CARGO_BIN_EXE_jsonkdl"))
-            .arg("-f")
-            .arg("-1")
-            .arg(&path)
-            .arg(&output_file)
-            .status()
-            .expect("failed to run binary");
-
-        assert!(status.success(), "jsonkdl failed on input: {:?}", path);
+        common::run_jsonkdl_v1(&path, &output_file)?;
 
         let mut kdl_str = String::new();
 
