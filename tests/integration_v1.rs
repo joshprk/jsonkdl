@@ -2,10 +2,12 @@ use std::fs::{self, File};
 use std::io::Read;
 use std::path::Path;
 use std::process::Command;
+
 use kdl::KdlDocument;
+use miette::Context;
 
 #[test]
-fn examples_v1() {
+fn examples_v1() -> miette::Result<()> {
     let examples_dir = Path::new("examples");
     let output_dir = Path::new("target/test_outputs/v1");
 
@@ -39,6 +41,8 @@ fn examples_v1() {
             .read_to_string(&mut kdl_str)
             .expect("failed to read output kdl");
 
-        KdlDocument::parse_v1(&kdl_str).expect("output is not valid kdl");
+        KdlDocument::parse_v1(&kdl_str).context("output is not valid kdl")?;
     }
+
+    Ok(())
 }
