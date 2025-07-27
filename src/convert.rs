@@ -1,4 +1,4 @@
-use kdl::{KdlDocument, KdlEntry, KdlIdentifier, KdlNode, KdlValue};
+use kdl::{KdlDocument, KdlEntry, KdlEntryFormat, KdlIdentifier, KdlNode, KdlValue};
 use serde_json::Value as JsonValue;
 use std::{fmt, fs, path::Path};
 
@@ -158,9 +158,37 @@ fn convert_node(json: &JsonValue) -> Result<KdlNode> {
 }
 
 fn convert_entry(json: &JsonValue) -> Result<KdlEntry> {
-    let value = convert_value(json.get("value").unwrap_or(json))?;
+    let mut entry = {
+        let json = json.get("value").unwrap_or(json);
 
-    let mut entry = KdlEntry::new(value);
+        match json {
+            JsonValue::Null => KdlEntry::new(KdlValue::Null),
+            JsonValue::Bool(b) => KdlEntry::new(KdlValue::Bool(*b)),
+            JsonValue::Number(n) => {
+                // note: it doesn't matter what value we give to this,
+                // as we never read it and we only print the value_repr,
+                // but it's important that it is a KdlValue::Integer or KdlValue::Float
+                // because those keep their value_repr on `ensure_v1`/`ensure_v2`.
+                // any other KdlValue variant is overwritten.
+                let mut entry = KdlEntry::new(KdlValue::Float(0.0));
+
+                entry.set_format(KdlEntryFormat {
+                    value_repr: n.as_str().into(),
+                    leading: " ".into(),
+                    autoformat_keep: true,
+                    ..Default::default()
+                });
+
+                entry
+            }
+            JsonValue::String(s) => KdlEntry::new(KdlValue::String(s.clone())),
+            _ => {
+                return Err(ConversionError::InvalidStructure(
+                    "unsupported json value type for kdl conversion".to_string(),
+                ));
+            }
+        }
+    };
 
     if let Some(ty) = json.get("type") {
         if let Some(ty) = convert_type(ty)? {
@@ -169,28 +197,6 @@ fn convert_entry(json: &JsonValue) -> Result<KdlEntry> {
     }
 
     Ok(entry)
-}
-
-fn convert_value(json: &JsonValue) -> Result<KdlValue> {
-    match json {
-        JsonValue::Null => Ok(KdlValue::Null),
-        JsonValue::Bool(b) => Ok(KdlValue::Bool(*b)),
-        JsonValue::Number(n) => {
-            if let Some(i) = n.as_i64() {
-                Ok(KdlValue::Integer(i as i128))
-            } else if let Some(f) = n.as_f64() {
-                Ok(KdlValue::Float(f))
-            } else {
-                Err(ConversionError::InvalidStructure(
-                    "invalid number value".to_string(),
-                ))
-            }
-        }
-        JsonValue::String(s) => Ok(KdlValue::String(s.clone())),
-        _ => Err(ConversionError::InvalidStructure(
-            "unsupported json value type for kdl conversion".to_string(),
-        )),
-    }
 }
 
 fn convert_type(json: &JsonValue) -> Result<Option<KdlIdentifier>> {
